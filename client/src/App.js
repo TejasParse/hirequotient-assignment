@@ -4,7 +4,9 @@ import axios from "axios";
 
 function App() {
 
-  const [Fulldata, setFullData] = useState([]);
+  const [FinalData, setFinalData] = useState([]);
+
+  const [FilteredData, setFilteredData] = useState([]);
   const [paginatedData, setPaginatedData] = useState([]);
   const [pageNo, setPageNo] = useState(1);
   const [pageLimit, setPageLimit] = useState(10);
@@ -29,7 +31,8 @@ function App() {
     axios.get("https://geektrust.s3-ap-southeast-1.amazonaws.com/adminui-problem/members.json")
       .then(res => {
         console.log(res.data, "This is the response");
-        setFullData(res.data);
+        setFilteredData(res.data);
+        setFinalData(res.data);
         updatePagination(res.data, pageNo, pageLimit);
       })
       .catch(err => {
@@ -39,16 +42,16 @@ function App() {
   }, []);
 
   let onDeleteSingle = (index) => {
-    setFullData(Fulldata.filter(item => item.id !== paginatedData[index].id));
+    setFilteredData(FilteredData.filter(item => item.id !== paginatedData[index].id));
+    setFinalData(FinalData.filter(item => item.id !== paginatedData[index].id));
   }
 
   let onDeleteMultiple = (event) => {
 
     let idsToDelete = paginatedData.filter((id, index) => checkedArray[index]).map(item => item.id);;
 
-    console.log(idsToDelete, "Delete this yo");
-
-    setFullData(Fulldata.filter(item => !idsToDelete.includes(item.id)));
+    setFilteredData(FilteredData.filter(item => !idsToDelete.includes(item.id)));
+    setFinalData(FinalData.filter(item => !idsToDelete.includes(item.id)));
 
     setCheckedArray(Array(pageLimit).fill(false));
   }
@@ -78,7 +81,7 @@ function App() {
 
     // paginatedData[editIndex] = newData;
 
-    const tempData = [...Fulldata];
+    const tempData = [...FilteredData];
 
     for(let i=0; i<tempData.length; i++) {
 
@@ -88,7 +91,7 @@ function App() {
       }
     }
 
-    setFullData(tempData);
+    setFilteredData(tempData);
 
     setEditIndex(0);
     setName("");
@@ -99,9 +102,26 @@ function App() {
     setViewModal(false);
   }
 
+  let filterData = (event)=> {
+    let searchQuery = event.target.value;
+
+    const filteredObjects = FinalData.filter(obj => {
+   
+      const values = Object.values(obj).map(value => value.toString().toLowerCase());
+    
+      return values.some(value => value.includes(searchQuery.toLowerCase()));
+    });
+
+    setFilteredData(filteredObjects)
+    
+
+    console.log(searchQuery, "This is the search query");
+    console.log(filteredObjects, "Filtered Ones");
+  }
+
   useEffect(() => {
-    updatePagination(Fulldata, pageNo, pageLimit);
-  }, [Fulldata, pageLimit, pageNo]);
+    updatePagination(FilteredData, pageNo, pageLimit);
+  }, [FilteredData, pageLimit, pageNo]);
 
   const checkedStyle = "dark:bg-gray-600";
 
@@ -111,7 +131,7 @@ function App() {
       <div class="flex mb-5">
 
         <div class="flex gap-2 w-full">
-          <input type="search" id="search-dropdown" class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-s-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500" placeholder="Enter Value" />
+          <input onInput={filterData} type="search" id="search-dropdown" class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-s-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500" placeholder="Enter Value" />
           <button onClick={onDeleteMultiple} disabled={checkedArray.every(element => element === false)} type="submit" class="p-2.5 text-sm font-medium h-full text-white bg-red-400 rounded-e-lg border border-blue-700 hover:bg-red-500 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
             Delete
           </button>
@@ -194,7 +214,7 @@ function App() {
         </table>
         <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4" aria-label="Table navigation">
           <span class="text-sm font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:inline md:w-auto">
-            Showing <span class="font-semibold text-gray-900 dark:text-white">{(pageNo - 1) * pageLimit + 1}-{((pageNo - 1) * pageLimit) + paginatedData.length}</span> of <span class="font-semibold text-gray-900 dark:text-white">{Fulldata.length}</span>
+            Showing <span class="font-semibold text-gray-900 dark:text-white">{(pageNo - 1) * pageLimit + 1}-{((pageNo - 1) * pageLimit) + paginatedData.length}</span> of <span class="font-semibold text-gray-900 dark:text-white">{FilteredData.length}</span>
           </span>
           <ul class="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
             <li>
@@ -209,7 +229,7 @@ function App() {
               </li> */}
 
             <li>
-              <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" onClick={() => setPageNo(prev => Math.min(prev + 1, Math.ceil(Fulldata.length / pageLimit)))}>Next</a>
+              <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" onClick={() => setPageNo(prev => Math.min(prev + 1, Math.ceil(FilteredData.length / pageLimit)))}>Next</a>
             </li>
           </ul>
         </nav>
